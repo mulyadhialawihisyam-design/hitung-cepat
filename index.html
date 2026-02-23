@@ -1,1 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring & Revenue</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --single: #10b981;
+            --multiple: #f59e0b;
+            --bulk: #ef4444;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --gold: #fbbf24;
+        }
 
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 950px;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header {
+            text-align: left;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+            padding-left: 1.5rem;
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; letter-spacing: -0.5px; }
+        .user-info { color: var(--text-dim); margin-top: 0.5rem; font-size: 1.1rem; }
+        .user-name { color: var(--primary); font-weight: bold; }
+
+        /* Income Panel */
+        .income-panel {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .income-label {
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .income-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            padding: 1.8rem;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+        }
+
+        .card.c-single::before { background: var(--single); }
+        .card.c-multiple::before { background: var(--multiple); }
+        .card.c-bulk::before { background: var(--bulk); }
+
+        .card h3 { 
+            margin: 0; 
+            font-size: 0.85rem; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+        }
+
+        .card .value { 
+            font-size: 2.5rem; 
+            font-weight: 800; 
+            margin: 10px 0;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .card .unit { font-size: 1rem; margin-left: 8px; color: var(--text-dim); }
+
+        .fee-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .btn-refresh {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 35px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-refresh:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 15px 20px -3px rgba(99, 102, 241, 0.4);
+            background: #4f46e5; 
+        }
+
+        .loader {
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Monitoring QTY Kerja</h1>
+        <div class="user-info">Nama Karyawan: <span class="user-name" id="emp-name">Memuat...</span></div>
+    </div>
+
+    <div class="income-panel">
+        <div class="income-label">Estimasi Fee Yang Didapat</div>
+        <div class="income-value">Rp <span id="total-income">0</span></div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="card c-single">
+            <h3>Single Qty (1)</h3>
+            <div class="value"><span id="qty-single">0</span><span class="unit">Pcs</span></div>
+            <div class="fee-indicator">Rp <span id="fee-single">0</span></div>
+        </div>
+
+        <div class="card c-multiple">
+            <h3>Multiple Qty (2-10)</h3>
+            <div class="value"><span id="qty-multiple">0</span><span class="unit">Pcs</span></div>
+            <div class="fee-indicator">Rp <span id="fee-multiple">0</span></div>
+        </div>
+
+        <div class="card c-bulk">
+            <h3>Bulk Qty (>10)</h3>
+            <div class="value"><span id="qty-bulk">0</span><span class="unit">Pcs</span></div>
+            <div class="fee-indicator">Rp <span id="fee-bulk">0</span></div>
+        </div>
+    </div>
+
+    <button class="btn-refresh" onclick="fetchData()">
+        <div id="loader" class="loader"></div>
+        Refresh Data Real-time
+    </button>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxvL_aHwX6R5j77ZPeZ185IQfzk6hNtdBU0cJ0uBPT7mPgUJaW8yN0GmC7Vs6-OLhpPsw/exec";
+
+    // Rate Fee per Pcs sesuai instruksi
+    const RATE = {
+        SINGLE: 230,
+        MULTIPLE: 121.5,
+        BULK: 40.5
+    };
+
+    async function fetchData() {
+        const loader = document.getElementById('loader');
+        loader.style.display = 'block';
+        
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            
+            // Inisialisasi data penampung
+            let summary = {
+                single: { qty: 0, fee: 0 },
+                multiple: { qty: 0, fee: 0 },
+                bulk: { qty: 0, fee: 0 }
+            };
+
+            // Mapping & Kalkulasi Berdasarkan Logika Baru
+            data.forEach(item => {
+                const qty = parseInt(item.jumlah_barang) || 0;
+                
+                if (qty === 1) {
+                    // Logika Single
+                    summary.single.qty += qty;
+                    summary.single.fee += (qty * RATE.SINGLE);
+                } 
+                else if (qty > 1 && qty <= 10) {
+                    // Logika Multiple (2 sampai 10)
+                    summary.multiple.qty += qty;
+                    summary.multiple.fee += (qty * RATE.MULTIPLE);
+                } 
+                else if (qty > 10) {
+                    // Logika Bulk (> 10)
+                    summary.bulk.qty += qty;
+                    summary.bulk.fee += (qty * RATE.BULK);
+                }
+            });
+
+            // Hitung Total Seluruh Fee
+            const totalRevenue = summary.single.fee + summary.multiple.fee + summary.bulk.fee;
+
+            // Update Tampilan Angka Qty
+            document.getElementById('qty-single').innerText = summary.single.qty.toLocaleString('id-ID');
+            document.getElementById('qty-multiple').innerText = summary.multiple.qty.toLocaleString('id-ID');
+            document.getElementById('qty-bulk').innerText = summary.bulk.qty.toLocaleString('id-ID');
+
+            // Update Tampilan Fee Per Kategori
+            document.getElementById('fee-single').innerText = summary.single.fee.toLocaleString('id-ID');
+            document.getElementById('fee-multiple').innerText = summary.multiple.fee.toLocaleString('id-ID');
+            document.getElementById('fee-bulk').innerText = summary.bulk.fee.toLocaleString('id-ID');
+
+            // Update Total Income (Hasil Estimasi Fee Keseluruhan)
+            document.getElementById('total-income').innerText = totalRevenue.toLocaleString('id-ID');
+            
+            // Update Nama/Divisi
+            if(data.length > 0) {
+                document.getElementById('emp-name').innerText = "Admin " + data[0].divisi;
+            }
+
+        } catch (error) {
+            console.error("Error Fetching Data:", error);
+            alert("Gagal mengambil data dari server. Pastikan API aktif.");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    // Jalankan fetch saat halaman selesai dimuat
+    window.onload = fetchData;
+</script>
+
+</body>
+</html>
